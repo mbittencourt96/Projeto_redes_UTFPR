@@ -2,11 +2,52 @@ import sys
 from _thread import *
 from PySide6 import QtCore,QtWidgets,QtGui
 import socket
+import threading
+
+
+class threadAcceptConnection(threading.Thread):
+    def __init__(self, serverSocket, thread_name, thread_ID):
+        threading.Thread.__init__(self)
+        self.thread_name = thread_name
+        self.thread_ID = thread_ID
+        self.thread_count = 1
+        self.serverSideSocket = serverSocket
+        self.connected_clients = []
+
+    def run(self):
+        while True:
+            Client, address = self.serverSideSocket.accept()
+            print('Connected to: ' + address[0] + ':' + str(address[1]))
+            self.connected_clients.append(address[0])
+
+            thread_listen = threadListen(Client,"ThreadListen",self.thread_count + 1)
+            thread_listen.start()
+            self.thread_count += 1
+            print('Thread Number: ' + str(self.thread_count))
+
+class threadListen(threading.Thread):
+    def __init__(self, connection,thread_name,thread_ID):
+        threading.Thread.__init__(self)
+        self.thread_name = thread_name
+        self.thread_ID = thread_ID
+        self.connection = connection
+ 
+        # helper function to execute the threads
+    def run(self):
+        #self.connection.send(str.encode('Server is working:'))
+        while True:
+            data = self.connection.recv(2048)
+            response = 'Client message: ' + data.decode('utf-8')
+            if not data:
+                break
+            print(response)
+        self.connection.close()
 
 class myServer:
     def __init__(self,port,host):
         self.port = int(port)
         self.host = host
+        self.connected_clients = []
 
     def init_server(self):
         self.serverSideSocket = socket.socket()
@@ -18,22 +59,9 @@ class myServer:
         except socket.error as e:
             return -1
 
-    def multi_threaded_client(self,connection):
-        while True:
-            data = connection.recv(2048)
-            response = 'Server message: ' + data.decode('utf-8')
-            if not data:
-                break
-            connection.sendall(str.encode(response))
-        connection.close()
-
     def acceptConnection(self):
-        while True:
-            Client, address = self.serverSideSocket.accept()
-            print('Connected to: ' + address[0] + ':' + str(address[1]))
-            start_new_thread(self.multi_threaded_client, (Client, ))
-            ThreadCount += 1
-            print('Thread Number: ' + str(ThreadCount))
+        thread1 = threadAcceptConnection(self.serverSideSocket,"Thread1",1)
+        thread1.start()
 
 class MainWidget(QtWidgets.QWidget):
     def __init__(self):
