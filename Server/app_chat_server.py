@@ -33,8 +33,6 @@ class myServer(QtWidgets.QWidget):
 
         #create list widgets
         self.clients_list_wdgt = QtWidgets.QListWidget()
-        self.chat_list_wdgt = QtWidgets.QListWidget()
-
         self.boxLayout = QtWidgets.QHBoxLayout()
 
         #set host
@@ -54,28 +52,18 @@ class myServer(QtWidgets.QWidget):
         self.gridLayout.addWidget(self.portInput, 1, 1)
         self.gridLayout.addWidget(self.labelInit, 2, 0)
         self.gridLayout.addWidget(self.button, 2, 1)
-        self.gridLayout.addWidget(self.textStatus)
+        self.gridLayout.addWidget(self.textStatus, 3, 0)
         self.gridLayout.setVerticalSpacing(10)
 
         self.labelClients = QtWidgets.QLabel("Clientes conectados:")
-        self.labelChat = QtWidgets.QLabel("Chat:")
 
         self.gridLayoutClients = QtWidgets.QGridLayout()
 
         self.gridLayoutClients.addWidget(self.labelClients, 0, 0)
         self.gridLayoutClients.addWidget(self.clients_list_wdgt, 1, 0)
 
-        self.gridLayoutChat = QtWidgets.QGridLayout()
-
-        self.gridLayoutChat.addWidget(self.labelChat,0,0)
-        self.gridLayoutChat.addWidget(self.chat_list_wdgt)
-        self.gridLayoutChat.addWidget(self.labelSendBroadcast)
-        self.gridLayoutChat.addWidget(self.broadcastInput)
-        self.gridLayoutChat.addWidget(self.btnSendBroadcast)
-
         self.boxLayout.addLayout(self.gridLayout)
         self.boxLayout.addLayout(self.gridLayoutClients)
-        self.boxLayout.addLayout(self.gridLayoutChat)
         self.setLayout(self.boxLayout)
 
         self.button.clicked.connect(self.initServer)
@@ -114,8 +102,9 @@ class myServer(QtWidgets.QWidget):
                 elif message["type"] == "DISCONNECT":
                     self.list.remove(self.map.pop(client))
                     self.connected_clients.pop(address)
-                    self.send(client, "DISCONNECTED", None, None, None, None)
+                    self.send(client, "DISCONNECTED", None, None, None)
                     self.update([client])
+                    client.close()
                     break
             except Exception as e:
                 print(str(e))
@@ -139,6 +128,9 @@ class myServer(QtWidgets.QWidget):
                 self.portInput.hide()
                 self.labelInit.hide()
                 self.button.hide()
+                self.gridLayout.addWidget(self.labelSendBroadcast,4,0)
+                self.gridLayout.addWidget(self.broadcastInput,5,0)
+                self.gridLayout.addWidget(self.btnSendBroadcast,6,0)
                 threading.Thread(target=self.acceptConnection).start()
             except socket.error:
                 self.textStatus.setText("Não foi possível iniciar o servidor! Tente novamente!")          
@@ -180,19 +172,19 @@ class myServer(QtWidgets.QWidget):
                 client.send(json.dumps(message).encode())
             except:
                 item = QtWidgets.QListWidgetItem()
-                item.setText('Não foi possível enviar a mensagem para o cliente {}'.format(client[0]))
+                item.setText('Não foi possível enviar a mensagem para o cliente {}'.format(name))
                 self.chat_list_wdgt.addItem(item)
-    def broadcast(self, name):
-        message = self.broadcastInput.text()
 
+    def broadcast(self):
+        message = self.broadcastInput.text()
         if message:
-            clients = self.connected_clients.copy()
-            for client in clients.values():
+            clients = self.map.copy()
+            for client in clients.keys():
                 try:
-                    self.send(client, "MESSAGE", name, message, None)
+                    self.send(client, "MESSAGE", 'Servidor', message, None)
                 except:
                     item = QtWidgets.QListWidgetItem()
-                    item.setText('Não foi possível enviar a mensagem para o cliente {}'.format(client[0]))
+                    item.setText('Não foi possível enviar a mensagem para o cliente {}'.format(clients[client][0]))
                     self.chat_list_wdgt.addItem(item)
 
     def closeEvent(self, event):

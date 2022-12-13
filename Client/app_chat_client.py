@@ -107,7 +107,6 @@ class myClient(QtWidgets.QWidget):
             self.textStatus.setText("Por favor, digite o host, a porta e o nome!")
     
     def disconnect(self):
-        self.socket.close()
         self.connected = False
         self.dict_clients.clear()
 

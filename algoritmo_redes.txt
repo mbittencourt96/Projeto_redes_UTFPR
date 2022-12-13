@@ -1,0 +1,41 @@
+variáveis importantes servidor:
+
+->self.list -> Lista de Tuplas, cada tupla contendo o nome do client e seu ip
+->self.map -> Dicionário, com chaves sendo o socket do cliente e os valores sendo a tupla com o nome e ip
+->self.connected_clients -> Dicionário contendo os clientes conectados. Chave é uma tupla com ip e porta, e valor é o socket
+do cliente.
+
+
+Fluxo do servidor:
+
+Quando a pessoa clica em Iniciar servidor, o socket (host + porta) é aberto e inicia
+a thread "accept connection", que fica escutando e aceitando novas conexões.
+
+Na thread "accept connection", a função socket.accept() é chamada. Essa função
+bloqueia até que haja uma nova conexão.
+Quando isso acontece, o novo cliente é adicionado ao dicionário "connected_clients".
+E uma nova thread "listen" é aberta para esse cliente, que fica escutando e esperando mensagens.
+
+Na thread "listen", podem chegar 3 tipos de mensagens:
+
+"CONNECT" -> solicitação de conexão do cliente
+"MESSAGE" -> Mensagem de texto do cliente
+"DISCONNECT" -> solicitação de desconexão do cliente
+
+Dependendo do tipo, algumas ações são executadas de acordo.
+Por exemplo, quando a mensagem é "CONNECT", as estruturas self.map, self.list e
+o widget de lista de clientes são atualizados, através da função update, que também
+envia o update dos clientes disponíveis para aquele cliente.
+
+
+FLUXO DE MENSAGENS
+
+1- Cliente envia solicitação de conexão "CONNECT"
+2- Servidor responde com "CONNECTED"
+3 - Servidor envia mensagem "UPDATE" para o cliente com todos os clientes disponíveis
+4 - A partir daí, as mensagem são do tipo "MESSAGE".
+5- Quando o cliente desconecta, envia uma mensagem do tipo "DISCONNECT" e 
+o servidor responde com "DISCONNECTED". Logo depois exclui e desconecta o cliente.
+
+
+
